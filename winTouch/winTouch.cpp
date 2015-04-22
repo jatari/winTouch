@@ -27,7 +27,8 @@ THE SOFTWARE.
 
 #include "windows.h"
 
-static const TCHAR ERROR_NO_ARGUMENTS[] = _T("No arguments were given!");
+static const TCHAR ERROR_NO_ARGUMENTS[] = _T("No arguments were given!\n");
+static const TCHAR ERROR_TOUCHING_FAILED_S[] = _T("Touching failed: %s\n");
 
 static const int ERROR_NONE = 0;
 static const int ERROR_CODE_ARGUMENT = 1;
@@ -74,10 +75,12 @@ int _tmain(int argc, _TCHAR* argv[])
 	{
 		for( int i = 1; error == ERROR_NONE && i < argc; ++i )
 		{
-			BOOL success = touch_file(argv[i]);
+			TCHAR* arg_file = argv[i];
+			BOOL success = touch_file(arg_file);
 			if( !success )
 			{
 				error = ERROR_CODE_TOUCH_FAILED;
+				_tprintf(ERROR_TOUCHING_FAILED_S, arg_file);
 			}
 		}
 	}
