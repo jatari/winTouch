@@ -28,14 +28,15 @@ if (-not (Test-Path $ExePath)) {
 Write-Host "Testing: $ExePath`n"
 
 # ── Test 1: no arguments → exit code 1 ────────────────────────────────────────
-& $ExePath 2>&1 | Out-Null
+# Redirect stderr to $null (not 2>&1) to avoid NativeCommandError in PS7
+& $ExePath 2>$null | Out-Null
 Assert ($LASTEXITCODE -eq 1) "No arguments: exit code 1"
 
 # ── Test 2: create a new file ─────────────────────────────────────────────────
 $tmp = [IO.Path]::GetTempFileName()
 Remove-Item $tmp -Force
 Assert (-not (Test-Path $tmp)) "Pre-condition: new-file target does not yet exist"
-& $ExePath $tmp 2>&1 | Out-Null
+& $ExePath $tmp 2>$null | Out-Null
 Assert ($LASTEXITCODE -eq 0) "Create new file: exit code 0"
 Assert (Test-Path $tmp) "Create new file: file exists afterwards"
 Remove-Item $tmp -Force -ErrorAction SilentlyContinue
@@ -44,7 +45,7 @@ Remove-Item $tmp -Force -ErrorAction SilentlyContinue
 $tmp = [IO.Path]::GetTempFileName()
 $before = (Get-Item $tmp).LastWriteTimeUtc
 Start-Sleep -Milliseconds 1100   # ensure a ≥1-second gap (FAT-style resolution)
-& $ExePath $tmp 2>&1 | Out-Null
+& $ExePath $tmp 2>$null | Out-Null
 Assert ($LASTEXITCODE -eq 0) "Touch existing file: exit code 0"
 $after = (Get-Item $tmp).LastWriteTimeUtc
 Assert ($after -gt $before) "Touch existing file: write time advanced"
@@ -56,7 +57,7 @@ $temps = 1..3 | ForEach-Object {
     Remove-Item $f -Force
     $f
 }
-& $ExePath @temps 2>&1 | Out-Null
+& $ExePath @temps 2>$null | Out-Null
 Assert ($LASTEXITCODE -eq 0) "Multiple files: exit code 0"
 foreach ($f in $temps) {
     Assert (Test-Path $f) "Multiple files: $([IO.Path]::GetFileName($f)) created"
@@ -65,13 +66,13 @@ foreach ($f in $temps) {
 
 # ── Test 5: invalid path → exit code 2 ───────────────────────────────────────
 $bad = "C:\NonExistentDirectory_winTouchTest_$([guid]::NewGuid().Guid)\test.txt"
-& $ExePath $bad 2>&1 | Out-Null
+& $ExePath $bad 2>$null | Out-Null
 Assert ($LASTEXITCODE -eq 2) "Invalid path: exit code 2"
 
 # ── Test 6: failure on one file does not abort remaining files ────────────────
 $good = [IO.Path]::GetTempFileName()
 Remove-Item $good -Force
-& $ExePath $bad $good 2>&1 | Out-Null
+& $ExePath $bad $good 2>$null | Out-Null
 Assert ($LASTEXITCODE -eq 2) "Mixed input: overall exit code 2 (partial failure)"
 Assert (Test-Path $good) "Mixed input: valid file was still created"
 Remove-Item $good -Force -ErrorAction SilentlyContinue
