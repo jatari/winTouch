@@ -28,7 +28,11 @@ function Assert([bool]$cond, [string]$msg) { if ($cond) { Pass $msg } else { Fai
 # without affecting the rest of the script.  $LASTEXITCODE is a global automatic
 # variable updated by the runtime after the process exits, so it is still
 # readable in the caller after this function returns.
-function Invoke-Touch ([string[]]$ExeArgs) {
+function Invoke-Touch {
+    param(
+        [Parameter(ValueFromRemainingArguments=$true)]
+        [string[]]$ExeArgs
+    )
     $local:ErrorActionPreference = 'SilentlyContinue'
     & $ExePath @ExeArgs 2>&1 | Out-Null
 }
